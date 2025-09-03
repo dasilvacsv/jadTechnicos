@@ -1,0 +1,27 @@
+- Excel paste to program work properly, will also set the electrodomesticos and falla
+- Add a lot of filters with calendario, zona, etc on clientes
+- Handle multiple electrodomesticos flow will be pretty much like osuna one, where
+Clientes/ Electrodomesticos
+Where u will have a table to put the electrodomesticos if u see beneficiarios from osuna is pretty much the same, make electrodomesticos simpler, just choose brand type, optional serial and number and it will add to table, so basically is a table inside of client, but we need a way this flows easily on the orden form but thats a problem for later so they will have a list with their electrodomesticos, electrodomesticos will work the same will show the orders as it does, but now is belonging to clients, with clientId fk
+- Config of NotadeEntrega, config of Orden de servicio ok where we will have a panel where they can change the info that will be rendered on the nota de entrega and orden de servicio, specific info
+- Garantias, a way we can have a section called ordenes/garantias, where it will find on db the orders and guarantee time, we will have a db on field for this on order where it will say garantia start, garantia end, and we will have on the order the SetGarantia function where we will set the garantias, if we set 3 months it will auto put start and end date, it we say unlimited it will just put on the endDate just null and a parametro of garantia ilimitada on db where it says true, this will be admin only
+- We need  a way the asign tecnico, we can have like a table where we can assign them, and dar de bajaa algunso, dar de baja will just put on stopReason field of db, the reason and when u click it will say yea this stopped bc this and uadd another one, we will also set role of Tecnico, where we can have a list like bundlecategory, brand etc, where u can find on popover and if not exist just create the role
+- When clicking on the part of nota de entrega, we will have the way to set concepto and thats what wil be rendered on nota de entrega so it will be a field with just unlimited space like idk maybe text field of drizzle idk which one is the more extensible for that, and will set conceptoEntrega where they can put it when the orden is entrega
+- We need a direct way to set diagnostico and the things we set when we edit
+- on Clients list, now that electrodomesticos belong to them  render like this: Cliente, Electrodomestico[0] first electrodomestico he has even if he has 10 and u can see more getting inside of it
+- Make it possible to add more electrodomesticos and like when is more than one u will put like this:
+Select electrodomestico assigned, set item, falla just as my system of adminpro does (see ref.png) on this folder
+- We need a way we can generate a QR that goes to electrodomestico X this way we can create tickets for electrodomesticos and go directly to page/electrodomestico/xxxxxxxx we will set it to use base url put it in a var first that it generates a QR with ling so easy to scan
+- See on tecnicos ordenes asignadas for them just like we see orders for electrodomesticos
+- Estados de orden, en este caso funciona asi, ellos pueden crear la orden y marcar un swiche que diga preorden donde ellos carguen la informacion de el cliente su electrodomestico, y su falla, si no, es una orden normal, cuando la orden se crea el status es orden => render as Orden Recibida, luego la orden pasaria al status asignada, en este caso se renderizaria como Asignado a Tecnico y diga en chiquito, (Pendiente por reporte), luego ese flujo te dara el boton ya como lo hace, y el boton te dara un despliegue de 3 opciones, si seleccionsa aprobado,te dice ingrese monto de presupuesto, al poner el monto de presupuesto, esto se guardara en la db como presupuestoAmount y es lo que se muestrra n la orden de entrega, puede pasar tambien no Aprobado, y entonces creara un pago pendiente de revision, donde se puede poner el monto pero dira por default 5, y otra opcion de pendiente por Avisar, y se ponga el presupuestoAmount pero quedara en status pendienteafter, la idea es que como se vean en el frontend se pueda cambiar super ez porque son muy mariscos con como se llama la cosa, cuando se pasa a Facturado, confirmara el monto de presupuesto, dara chance de actualizarlo, y peudes cambiarlo, pondras el conceptoOrden, y eso te creara el facturado que genera la orden de entrega, ese campo de conceptoOrden debe ser grande, osea aguantar bastante texto
+y puede ser un jsonb asi
+Header => this will go subrayado etc
+Text where they will put shit and if they setted up namespaces it will go that way
+Also when facturado, it will also ask for setGuarantee, u will have start date, end date if u set 1 mes it will auto set the end date if u set 3months and so on
+
+- Print guarantee Time on nota de entrega 
+- Render on page the createdBy and updatedby
+- Agregar filtros tipo calendario como el que tenia yo de ff, filtros etc
+- tener una parte donde se pueda ver el monto presupuestado y poder cambialo
+- On cliente register zona to be like categorysleect and those selects, u will create city and set on the select popover and just the same for zona so we will have a growing List of Zonas and Ciudades and if it doesnt exist they can just create it like i do with those popovers where u set name
+-

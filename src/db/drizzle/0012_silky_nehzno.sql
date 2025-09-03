@@ -1,0 +1,1 @@
+ALTER TABLE "service_orders" ALTER COLUMN "order_number" SET DATA TYPE varchar(50);

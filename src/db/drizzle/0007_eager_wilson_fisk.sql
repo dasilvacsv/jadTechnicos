@@ -1,0 +1,1 @@
+ALTER TABLE "service_orders" ADD COLUMN "diagnostics" text;

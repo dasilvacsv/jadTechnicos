@@ -1,0 +1,1 @@
+ALTER TABLE "service_orders" ADD COLUMN "client_notifications_enabled" boolean DEFAULT true;

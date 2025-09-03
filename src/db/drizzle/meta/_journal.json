@@ -1,0 +1,132 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1746729405051,
+      "tag": "0000_nasty_titanium_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1746732021407,
+      "tag": "0001_overjoyed_dracula",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1746733522699,
+      "tag": "0002_fantastic_blonde_phantom",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1746789597493,
+      "tag": "0003_fair_mad_thinker",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1746815475118,
+      "tag": "0004_smiling_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1746821845632,
+      "tag": "0005_busy_earthquake",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1746855004741,
+      "tag": "0006_sleepy_phalanx",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1747049997814,
+      "tag": "0007_eager_wilson_fisk",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1747055530427,
+      "tag": "0008_blushing_nocturne",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1747112565081,
+      "tag": "0009_simple_rumiko_fujikawa",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1747115917547,
+      "tag": "0010_condemned_ultimo",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1747155704840,
+      "tag": "0011_perpetual_landau",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1747157552163,
+      "tag": "0012_silky_nehzno",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1747245428669,
+      "tag": "0013_unusual_eternals",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1747285933419,
+      "tag": "0014_awesome_mantis",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1747752313723,
+      "tag": "0015_tough_magdalene",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1756235278402,
+      "tag": "0016_smooth_black_widow",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1756881585447,
+      "tag": "0017_luxuriant_groot",
+      "breakpoints": true
+    }
+  ]
+}
