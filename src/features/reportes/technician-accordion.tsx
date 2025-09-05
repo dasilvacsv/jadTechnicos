@@ -1,22 +1,19 @@
-"use client"
+// src/features/orden/TechnicianAccordion.tsx
 
-import React, { Dispatch, SetStateAction, memo, useMemo, useRef } from "react"
-import { User, ChevronDown, Clock, Wrench, CheckCircle, XCircle } from "lucide-react"
+"use client";
 
-// Componentes de shadcn/ui
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import React, { Dispatch, SetStateAction, memo, useMemo } from "react";
+import { motion } from "framer-motion";
+import { User, ChevronDown, Wrench, Calendar, Hash, DollarSign } from "lucide-react";
 
-// Componentes de la aplicación y utilidades
-import { OrderRowActions } from "@/features/orden/order-row-actions"
-import { OrderTableCell } from "@/features/orden/order-table-cell"
-import { ServiceOrder } from "@/features/orden/service-order"
-import { formatDate, cn } from "@/lib/utils"
-import { EmptyState } from "../orden/empty-state"
-
-// Importación para virtualización
-import { useVirtualizer } from '@tanstack/react-virtual'
+// Componentes y utilidades
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { OrderRowActions } from "@/features/orden/order-row-actions";
+import { OrderTableCell } from "@/features/orden/order-table-cell";
+import { ServiceOrder } from "@/features/orden/service-order";
+import { formatDate, cn } from "@/lib/utils";
+import { EmptyState } from "../orden/empty-state";
 
 // Interfaz para el estado de los acordeones
 interface OpenItemsState {
@@ -30,167 +27,141 @@ interface TechnicianAccordionProps {
   setOpenItems: Dispatch<SetStateAction<OpenItemsState>>;
 }
 
-// Orden para los estados
-const STATUS_ORDER: (ServiceOrder['status'])[] = [
-  "PENDING", "ASSIGNED", "PRESUPUESTADO", "REPARANDO", "PENDIENTE_AVISAR", "FACTURADO", "APROBADO",
-  "COMPLETED", "DELIVERED", "GARANTIA_APLICADA", "NO_APROBADO", "CANCELLED", "PREORDER"
-];
+const STATUS_ORDER: (ServiceOrder['status'])[] = ["PENDING", "ASSIGNED", "PRESUPUESTADO", "REPARANDO", "PENDIENTE_AVISAR", "FACTURADO", "APROBADO", "COMPLETED", "DELIVERED", "GARANTIA_APLICADA", "NO_APROBADO", "CANCELLED", "PREORDER"];
 
-// Utilidad para obtener colores de estado consistentes
-const getStatusColor = (status: ServiceOrder['status']): string => {
-  switch (status.toUpperCase()) {
-    case 'PENDING':
-    case 'ASSIGNED':
-      return 'bg-yellow-500';
-
-    case 'PRESUPUESTADO':
-      return 'bg-purple-500';
-
-    case 'REPARANDO':
-      return 'bg-blue-500';
-    
-    case 'COMPLETED':
-    case 'DELIVERED':
-      return 'bg-green-500';
-    
-    case 'CANCELLED':
-    case 'NO_APROBADO':
-      return 'bg-red-500';
-
-    case 'FACTURADO':
-        return 'bg-purple-500';
-
-    default:
-      return 'bg-gray-400';
-  }
+const getStatusClasses = (status: ServiceOrder['status']): { border: string, bg: string, text: string } => {
+  switch (status.toUpperCase()) {
+    case 'PENDING': case 'ASSIGNED': return { border: 'border-l-amber-500', bg: 'bg-amber-500', text: 'text-amber-500' };
+    case 'PRESUPUESTADO': case 'FACTURADO': return { border: 'border-l-purple-500', bg: 'bg-purple-500', text: 'text-purple-500' };
+    case 'REPARANDO': return { border: 'border-l-blue-500', bg: 'bg-blue-500', text: 'text-blue-500' };
+    case 'COMPLETED': case 'DELIVERED': case 'APROBADO': return { border: 'border-l-green-500', bg: 'bg-green-500', text: 'text-green-500' };
+    case 'CANCELLED': case 'NO_APROBADO': return { border: 'border-l-red-500', bg: 'bg-red-500', text: 'text-red-500' };
+    default: return { border: 'border-l-gray-400', bg: 'bg-gray-400', text: 'text-gray-400' };
+  }
 };
 
 // ====================================================================
-// SUB-COMPONENTE: Píldora de Estado (StatusPill)
+// SUB-COMPONENTE: PÍLDORA DE ESTADO
 // ====================================================================
-const StatusPill = memo(({ status }: { status: ServiceOrder['status'] }) => (
-    <div className="flex items-center gap-2">
-        <span className={cn("h-2 w-2 rounded-full", getStatusColor(status))} />
-        <span className="font-medium text-sm text-foreground">
-            {OrderTableCell.getStatusText(status)}
-        </span>
-    </div>
-));
+const StatusPill = memo(({ status }: { status: ServiceOrder['status'] }) => {
+    const { bg } = getStatusClasses(status);
+    return (
+        <div className="flex items-center gap-2">
+            <span className={cn("h-2 w-2 rounded-full", bg)} />
+            <span className="font-medium text-sm text-foreground">
+                {OrderTableCell.getStatusText(status)}
+            </span>
+        </div>
+    );
+});
 StatusPill.displayName = 'StatusPill';
 
 // ====================================================================
-// SUB-COMPONENTE: Barra de Resumen de Estados
+// ✨ NUEVO SUB-COMPONENTE MEJORADO: Tarjeta de Orden para Móviles
 // ====================================================================
-const StatusSummaryBar = memo(({ statusMap }: { statusMap: Map<string, ServiceOrder[]> }) => {
-  const summary = useMemo(() => {
-    const entries = Array.from(statusMap.entries());
-    const total = entries.reduce((acc, [, orders]) => acc + orders.length, 0);
-    if (total === 0) return [];
-    
-    return entries
-      .map(([status, orders]) => ({
-        status: status as ServiceOrder['status'],
-        count: orders.length,
-        percentage: (orders.length / total) * 100,
-      }))
-      .sort((a, b) => STATUS_ORDER.indexOf(a.status.toUpperCase() as any) - STATUS_ORDER.indexOf(b.status.toUpperCase() as any));
-  }, [statusMap]);
+const OrderMobileCard = memo(({ order }: { order: ServiceOrder }) => {
+  const applianceText = useMemo(() => {
+    if (!order.appliances || order.appliances.length === 0) return 'No especificado';
+    const firstApplianceName = order.appliances[0].clientAppliance.name;
+    const remainingCount = order.appliances.length - 1;
+    return `${firstApplianceName}${remainingCount > 0 ? ` (+${remainingCount})` : ''}`;
+  }, [order.appliances]);
+
+  const { border } = getStatusClasses(order.status);
 
   return (
-    <TooltipProvider delayDuration={150}>
-      <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted mt-2">
-        {summary.map(({ status, percentage, count }) => (
-          <Tooltip key={status}>
-            <TooltipTrigger asChild>
-              <div
-                className={cn("h-full transition-all duration-300", getStatusColor(status))}
-                style={{ width: `${percentage}%` }}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{OrderTableCell.getStatusText(status)}: {count} orden(es)</p>
-            </TooltipContent>
-          </Tooltip>
-        ))}
+    <div
+      className={cn(
+        "bg-card rounded-lg border border-l-4 p-4 shadow-sm cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-all",
+        border
+      )}
+      onClick={() => window.open(`/ordenes/${order.id}`, '_blank')}
+    >
+      <div className="flex justify-between items-start gap-3">
+        {/* Información Principal */}
+        <div className="flex-1 space-y-1.5">
+          <p className="font-bold text-base leading-tight text-card-foreground">{order.client.name}</p>
+          <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+            <Hash size={12} /> {order.orderNumber}
+          </div>
+        </div>
+        {/* Acciones */}
+        <div className="ml-2 -mr-2" onClick={(e) => e.stopPropagation()}>
+          <OrderRowActions order={order} />
+        </div>
       </div>
-    </TooltipProvider>
+
+      {/* Separador y detalles secundarios */}
+      <div className="mt-3 pt-3 border-t border-border/50">
+        {/* ✨ UX Móvil: Estado explícito en la tarjeta para mayor claridad. */}
+        <div className="mb-3">
+            <StatusPill status={order.status} />
+        </div>
+        
+        {/* ✨ UX Móvil: Layout con flex-wrap para mejor adaptabilidad del contenido. */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <Wrench size={14} className="text-primary/80" />
+              <span className="truncate">{applianceText}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Calendar size={14} className="text-primary/80" />
+              <span>{order.fechaAgendado ? formatDate(order.fechaAgendado, "short") : 'Sin fecha'}</span>
+            </div>
+            {/* ✨ UX Móvil: Monto total destacado para rápida visualización. */}
+            <div className="flex items-center gap-1.5 font-semibold text-foreground">
+              <DollarSign size={14} className="text-primary/80" />
+              <span>{new Intl.NumberFormat("es-VE", { style: "currency", currency: "USD" }).format(Number(order.totalAmount || 0))}</span>
+            </div>
+        </div>
+      </div>
+    </div>
   );
 });
-StatusSummaryBar.displayName = 'StatusSummaryBar';
+OrderMobileCard.displayName = 'OrderMobileCard';
 
 
 // ====================================================================
-// COMPONENTE: Tabla de Órdenes Virtualizada
+// SUB-COMPONENTE: Tabla de Órdenes para PC (sin cambios)
 // ====================================================================
-const StatusTable = memo(({ orders }: { orders: ServiceOrder[] }) => {
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  const rowVirtualizer = useVirtualizer({
-    count: orders.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 45,
-    overscan: 5,
-  });
-
+const OrderTable = memo(({ orders }: { orders: ServiceOrder[] }) => {
   return (
-    <div ref={parentRef} className="relative max-h-[350px] overflow-auto rounded-md border bg-background">
+    <div className="relative max-h-[400px] overflow-auto rounded-md border bg-background hidden md:block">
       <Table>
         <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
-          <TableRow className="flex w-full">
-            <TableHead className="w-[120px] shrink-0">Número</TableHead>
-            <TableHead className="flex-1">Cliente</TableHead>
-            <TableHead className="w-[140px] shrink-0">F. Captación</TableHead>
-            <TableHead className="w-[80px] shrink-0 text-right">Acciones</TableHead>
+          <TableRow>
+            <TableHead className="w-[120px]">Número</TableHead>
+            <TableHead>Cliente</TableHead>
+            <TableHead className="w-[140px]">F. Captación</TableHead>
+            <TableHead className="w-[80px] text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
-
-        <TableBody style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
-          {rowVirtualizer.getVirtualItems().map(virtualItem => {
-            const order = orders[virtualItem.index];
-            return (
-              <TableRow
-                key={order.id}
-                ref={rowVirtualizer.measureElement}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: `${virtualItem.size}px`,
-                  transform: `translateY(${virtualItem.start}px)`,
-                }}
-                className="flex w-full cursor-pointer items-center transition-colors hover:bg-muted/50"
+        <TableBody>
+          {orders.map(order => (
+             <TableRow 
+                key={order.id} 
+                className="cursor-pointer"
                 onClick={(e) => {
                   if (!(e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
                     window.open(`/ordenes/${order.id}`, '_blank');
                   }
                 }}
-              >
-                <TableCell className="w-[120px] shrink-0 font-mono text-xs">
-                  <OrderTableCell.OrderNumber order={order} />
-                </TableCell>
-                <TableCell className="flex-1 truncate font-medium text-sm">
-                  {order.client.name}
-                </TableCell>
-                <TableCell className="w-[140px] shrink-0 text-xs text-muted-foreground">
-                  {order.fechaCaptacion ? formatDate(order.fechaCaptacion) : '-'}
-                </TableCell>
-                <TableCell className="w-[80px] shrink-0 text-right" onClick={(e) => e.stopPropagation()}>
-                  <OrderRowActions order={order} />
-                </TableCell>
-              </TableRow>
-            );
-          })}
+             >
+              <TableCell className="font-mono text-xs"><OrderTableCell.OrderNumber order={order} /></TableCell>
+              <TableCell className="font-medium truncate">{order.client.name}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{order.fechaCaptacion ? formatDate(order.fechaCaptacion) : '-'}</TableCell>
+              <TableCell className="text-right" onClick={(e) => e.stopPropagation()}><OrderRowActions order={order} /></TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>
   );
 });
-StatusTable.displayName = 'StatusTable';
-
+OrderTable.displayName = 'OrderTable';
 
 // ====================================================================
-// SUB-COMPONENTE: Acordeón de Estados
+// SUB-COMPONENTE: ACORDEÓN DE ESTADOS (Actualizado con animaciones)
 // ====================================================================
 const StatusAccordion = memo(({ technicianName, statusMap, openItems, setOpenItems }: {
     technicianName: string;
@@ -202,21 +173,29 @@ const StatusAccordion = memo(({ technicianName, statusMap, openItems, setOpenIte
         (a, b) => STATUS_ORDER.indexOf(a[0].toUpperCase() as any) - STATUS_ORDER.indexOf(b[0].toUpperCase() as any)
     )), [statusMap]);
 
+    // ✨ UX Móvil: Variantes de animación para la entrada escalonada de las tarjetas.
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.07 }
+        }
+    };
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: { y: 0, opacity: 1 }
+    };
+
     return (
-        <Accordion
-            type="multiple"
-            className="w-full space-y-2"
-            value={openItems.statuses[technicianName] || []}
+        <Accordion type="multiple" className="w-full space-y-2" value={openItems.statuses[technicianName] || []}
             onValueChange={(newOpenStatuses) => {
                 setOpenItems(prev => ({
-                    ...prev,
-                    statuses: { ...prev.statuses, [technicianName]: newOpenStatuses }
+                    ...prev, statuses: { ...prev.statuses, [technicianName]: newOpenStatuses }
                 }));
-            }}
-        >
+            }} >
             {Array.from(sortedStatusMap.entries()).map(([status, orders]) => (
-                <AccordionItem value={status} key={status} className="border-b-0">
-                    <AccordionTrigger className="group rounded-md border bg-muted/50 px-4 py-2 hover:bg-muted/80 hover:no-underline data-[state=open]:rounded-b-none">
+                <AccordionItem value={status} key={status} className="border-b-0 rounded-md bg-muted/30">
+                    <AccordionTrigger className="group rounded-md border px-4 py-2 hover:bg-muted/80 hover:no-underline data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
                         <div className="flex w-full items-center justify-between">
                             <StatusPill status={status as ServiceOrder['status']} />
                             <div className="flex items-center">
@@ -226,7 +205,21 @@ const StatusAccordion = memo(({ technicianName, statusMap, openItems, setOpenIte
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="rounded-b-md border border-t-0 bg-card p-2">
-                        <StatusTable orders={orders} />
+                        {/* ✨ UX Móvil: Contenedor animado con motion.div */}
+                        <motion.div 
+                            className="space-y-3 md:hidden"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
+                            {orders.map(order => (
+                                <motion.div key={order.id} variants={itemVariants}>
+                                    <OrderMobileCard order={order} />
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                        {/* Vista de PC con la tabla se mantiene */}
+                        <OrderTable orders={orders} />
                     </AccordionContent>
                 </AccordionItem>
             ))}
@@ -235,105 +228,40 @@ const StatusAccordion = memo(({ technicianName, statusMap, openItems, setOpenIte
 });
 StatusAccordion.displayName = 'StatusAccordion';
 
-// Componente para mostrar el resumen de contadores por estado
-const TechnicianStatusCounts = memo(({ statusMap }: { statusMap: Map<string, ServiceOrder[]> }) => {
-  const counts = useMemo(() => {
-    const getCount = (status: string) => Array.from(statusMap.entries())
-      .find(([key]) => key.toUpperCase() === status.toUpperCase())?.[1].length || 0;
-
-    const pending = getCount('PENDING') + getCount('ASSIGNED') + getCount('PENDIENTE_AVISAR'); // Suma "PENDIENTE_AVISAR"
-    const repairing = getCount('REPARANDO');
-    const quoted = getCount('PRESUPUESTADO'); // Nuevo contador
-    const invoiced = getCount('FACTURADO'); // Nuevo contador
-    const completed = getCount('COMPLETED') + getCount('DELIVERED') + getCount('APROBADO') + getCount('GARANTIA_APLICADA'); // Suma "DELIVERED", "APROBADO", "GARANTIA_APLICADA"
-    const cancelled = getCount('CANCELLED') + getCount('NO_APROBADO');
-
-    return [
-      { count: pending, label: "Pendientes", icon: Clock, color: "text-yellow-600" },
-      { count: repairing, label: "Reparando", icon: Wrench, color: "text-blue-600" },
-      { count: quoted, label: "Presupuestos", icon: '💲', color: "text-purple-600" }, // Icono emoji para "Presupuestos"
-      { count: invoiced, label: "Presupuestados", icon: '🧾', color: "text-purple-600" }, // Icono emoji para "Facturados"
-      { count: completed, label: "Completados", icon: CheckCircle, color: "text-green-600" },
-      { count: cancelled, label: "Cancelados", icon: XCircle, color: "text-red-600" },
-    ].filter(item => item.count > 0);
-
-  }, [statusMap]);
-
-  if (counts.length === 0) return null;
-
-  return (
-    <div className="flex items-center gap-4 mt-3">
-      {counts.map(({ count, label, icon: Icon, color }) => (
-        <div key={label} className={cn("flex items-center gap-1.5 text-xs font-medium", color)}>
-          {typeof Icon === 'string' ? (
-            <span className="text-sm">{Icon}</span>
-          ) : (
-            <Icon className="h-3.5 w-3.5" />
-          )}
-          <span>{count} {label}</span>
-        </div>
-      ))}
-    </div>
-  );
-});
-TechnicianStatusCounts.displayName = 'TechnicianStatusCounts';
-
 
 // ====================================================================
-// COMPONENTE PRINCIPAL: TechnicianAccordion
+// COMPONENTE PRINCIPAL (sin cambios grandes)
 // ====================================================================
 export function TechnicianAccordion({ groupedData, openItems, setOpenItems }: TechnicianAccordionProps) {
   if (groupedData.size === 0) {
     return <EmptyState hasActiveFilters={true} resetFilters={() => {}} />;
   }
-
-  const handleTechnicianToggle = (newOpenTechnicians: string[]) => {
-    const newStatuses = { ...openItems.statuses };
-    const closedTechnicians = openItems.technicians.filter(t => !newOpenTechnicians.includes(t));
-    closedTechnicians.forEach(t => delete newStatuses[t]);
-    setOpenItems({ technicians: newOpenTechnicians, statuses: newStatuses });
-  };
-  
+ 
   return (
-    <Accordion
-      type="multiple"
-      className="w-full space-y-4"
-      value={openItems.technicians}
-      onValueChange={handleTechnicianToggle}
-    >
-      {Array.from(groupedData.entries())
-        .sort(([, statusMapA], [, statusMapB]) => {
-          const totalOrdersA = Array.from(statusMapA.values()).reduce((sum, orders) => sum + orders.length, 0);
-          const totalOrdersB = Array.from(statusMapB.values()).reduce((sum, orders) => sum + orders.length, 0);
-          return totalOrdersB - totalOrdersA;
-        })
-        .map(([technicianName, statusMap]) => {
+    <Accordion type="multiple" className="w-full space-y-4" value={openItems.technicians}
+      onValueChange={(newOpenTechnicians) => {
+          setOpenItems(prev => ({ ...prev, technicians: newOpenTechnicians }));
+      }} >
+      {Array.from(groupedData.entries()).map(([technicianName, statusMap]) => {
         const totalOrders = Array.from(statusMap.values()).reduce((acc, orders) => acc + orders.length, 0);
 
         return (
-          <AccordionItem value={technicianName} key={technicianName} className="overflow-hidden rounded-xl border-2 border-transparent bg-card shadow-md transition-all duration-300 data-[state=open]:border-primary/20">
-            <AccordionTrigger className="group px-6 py-4 hover:bg-muted/50 hover:no-underline">
-              <div className="flex w-full flex-col items-start">
-                <div className="flex w-full items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="rounded-full bg-primary/10 p-2 text-primary">
-                            <User className="h-6 w-6" />
-                        </div>
-                        <span className="text-xl font-bold tracking-tight text-primary">{technicianName}</span>
+          <AccordionItem value={technicianName} key={technicianName} className="overflow-hidden rounded-xl border bg-card shadow-sm data-[state=open]:border-primary/20">
+            <AccordionTrigger className="group px-4 py-3 md:px-6 md:py-4 hover:bg-muted/50 hover:no-underline text-left">
+              <div className="flex w-full items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <User className="h-6 w-6" />
                     </div>
-                    <div className="flex items-center gap-4">
-                        <span className="rounded-full bg-primary px-3 py-1 text-sm font-bold text-primary-foreground">{totalOrders} servicio(s)</span>
-                        <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                    </div>
-                </div>
-                {/* Se añaden los contadores y la barra de resumen */}
-                <div className="w-full">
-                    <TechnicianStatusCounts statusMap={statusMap} />
-                    <StatusSummaryBar statusMap={statusMap} />
-                </div>
+                    <span className="text-lg md:text-xl font-bold tracking-tight text-primary">{technicianName}</span>
+                  </div>
+                  <div className="flex items-center gap-2 md:gap-4">
+                    <span className="flex-shrink-0 rounded-full bg-primary px-2.5 py-1 text-xs md:text-sm font-bold text-primary-foreground">{totalOrders} servicio{totalOrders !== 1 ? 's' : ''}</span>
+                    <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                  </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
+            <AccordionContent className="bg-muted/20 px-2 md:px-4 pb-4">
               <StatusAccordion
                 technicianName={technicianName}
                 statusMap={statusMap}

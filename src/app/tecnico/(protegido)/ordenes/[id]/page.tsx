@@ -1,22 +1,27 @@
 // src/app/(tecnico)/ordenes/[id]/page.tsx
 
 import { getServiceOrderByIdForTechnician } from "@/features/orden/actions";
-import { ServiceOrderDetail } from "@/features/orden/service-order-detail"; // Reutilizamos el componente
+// 👇 1. IMPORTAMOS LA NUEVA VISTA
+import { TechnicianOrderDetailView } from "@/features/orden/technician-order-detail-view"; 
 import { auth } from "@/features/auth";
 import { notFound, redirect } from "next/navigation";
 
 export default async function TechnicianOrderDetailPage({ params }: { params: { id: string } }) {
   const session = await auth();
+
   if (!session?.user?.id || session.user.role !== "TECHNICIAN") {
-    redirect("/sign-in");
+    redirect("/tecnico/sign-in");
   }
 
-  const { data: order, error } = await getServiceOrderByIdForTechnician(params.id, session.user.id);
+  const { data: order, error } = await getServiceOrderByIdForTechnician(
+    params.id,
+    session.user.id
+  );
 
   if (error || !order) {
     notFound();
   }
 
-  // Pasamos la prop `isReadOnly` al detalle de la orden
-  return <ServiceOrderDetail order={order} userId={session.user.id} isReadOnly={true} />;
+  // 👇 2. USAMOS EL NUEVO COMPONENTE
+  return <TechnicianOrderDetailView order={order} />;
 }
